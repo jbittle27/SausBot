@@ -1,58 +1,48 @@
-import lightbulb
-import hikari
-from hikari import intents
+import discord
+from discord.ext import commands
+from discord import app_commands
+import DiscordUtils
 import random
 import os
-from setup import get_token
+import setup as sp
 
-# global variables
-cwd = os.getcwd()
-bot_token = get_token()
+token = sp.get_token()
+channel_id, server_id = sp.get_data()
+prefix = "!"
 
-# bot initialization
-bot = lightbulb.BotApp(
-    token=bot_token,
-    intents=hikari.Intents.ALL,
-    default_enabled_guilds=()  # for future / commands
-)
-
-
-def initialize_invite_created(event):
-    user_directory = f'{cwd}\\servers\\{event.guild_id}\\invite_users\\{event.invite.inviter.username}'
-    user_invited_file = f'{cwd}\\servers\\{event.guild_id}\\invite_users\\{event.invite.inviter.username}\\{event.invite.inviter.username}.txt'
-    user_codes_file = f'{cwd}\\servers\\{event.guild_id}\\invite_users\\{event.invite.inviter.username}\\{event.invite.inviter.username}_codes.txt'
-    if not os.path.exists(user_directory):
-        os.makedirs(user_directory)
-    with open(user_codes_file, 'a') as f:
-        f.write(
-            f'{event.code}|{event.invite.uses}|{event.invite.max_uses}|{event.invite.expires_at}')
-    with open(user_invited_file, 'a') as f:
-        pass
+intents = discord.Intents.default()
+intents.members = True
+intents.message_content = True
+client = commands.Bot(command_prefix=prefix, intents=intents)
+tracker = DiscordUtils.InviteTracker(client)
 
 
-def parse_invite(event):
+@client.event
+async def on_ready():
     pass
+    # await client.send_message(discord.Object(id=channel_id), 'working')
 
 
-def compare_invite_uses(event):
-    pass
+@client.event
+async def on_member_join(new_member):
+    inviter = await tracker.fetch_inviter(new_member)
+    with open('invites.txt', 'a') as f:
+        f.write(f'{new_member}, {inviter}, {new_member.joined_at}\n')
+    channel = client.get_channel(int(channel_id))
+    await channel.send(f'{inviter} invited {new_member}!')
 
 
-# On user join
-@bot.listen(hikari.MemberCreateEvent)
-async def member_joined(event):
-    # TODO parse current invite
-    # update invite uses for all codes (yikes)
-    # check updated invite records with old invited records
-    # record member joined under proper inviter
-    pass
+@client.command()
+async def invite(ctx, arg):
+    with open('invites.txt', 'r') as f:
+        file_lines = f.readlines()
+        # quick getaround for a user being invited multiple times
+        # will get the most recent invite added
+        for line in reversed(file_lines):
+            if arg == line.split(',')[0]:
+                inviter = line.split(',')[1]
+                await ctx.send(f'{inviter} invited {arg}!')
+                break
 
 
-# On user creating invite
-@bot.listen(hikari.InviteCreateEvent)
-async def created_invite(event):
-    initialize_invite_created(event)
-    print('hit hikari')
-
-
-bot.run()
+client.run(token)

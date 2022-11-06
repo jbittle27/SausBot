@@ -4,3 +4,10 @@ def get_token():
         for line in file_lines:
             bot_token = line.strip()
     return bot_token
+
+
+def get_data():
+    with open('data.txt', 'r') as f:
+        channel_id = f.readline().strip()
+        server_id = f.readline().strip()
+    return channel_id, server_id
