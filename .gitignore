@@ -1,4 +1,5 @@
 
 *.txt
-*.key
 *.db
+setupinfo.json
+tacobell.png
