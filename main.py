@@ -42,9 +42,9 @@ async def on_command_error(ctx, error):
         m, s = divmod(error.retry_after, 60)
         h, m = divmod(m, 60)
 
-        if int(h) is 0 and int(m) is 0:
+        if int(h) == 0 and int(m) == 0:
             await ctx.send(f'You must wait {int(s)} seconds to use this command!')
-        elif int(h) is 0 and int(m) is not 0:
+        elif int(h) == 0 and int(m) != 0:
             await ctx.send(f'You must wait {int(n)} minutes and {int(s)} seconds to use this command!')
         else:
             await ctx.send(f'You must wait {int(h)} hours, {int(m)} minutes, and {int(s)} seconds to use this command!')
@@ -87,7 +87,7 @@ async def stats(ctx):
 
     embed = discord.Embed(title=f'Bot Statistics',
                           description='\uFEFF',
-                          url='https://github.com/jbittle27/new-discord-bot',
+                          url='https://github.com/jbittle27/SausBot',
                           colour=discord.Colour(0xd9a064))
 
     embed.set_thumbnail(url=tacobell_logo)
