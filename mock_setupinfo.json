@@ -1,0 +1,12 @@
+{
+  "bot_info":[
+  {
+  "token": "token_here",
+  "channel_id": id_here,
+  "server_id": id_here,
+  "rules_channel_id": id_here,
+  "bot_owner_id": id_here,
+  "reaction_message_id": id_here
+  }
+  ]
+}

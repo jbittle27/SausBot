@@ -12,4 +12,4 @@ def get_info():
 
 def set_info():
     bot_info = get_info()
-    return bot_info['token'], bot_info['channel_id'], bot_info['server_id'], bot_info['rules_channel_id'], bot_info['bot_owner_id']
+    return bot_info['token'], bot_info['channel_id'], bot_info['server_id'], bot_info['rules_channel_id'], bot_info['bot_owner_id'], bot_info['reaction_message_id']

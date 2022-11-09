@@ -1,19 +1,23 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+from discord.ui import Button, View
 import platform
 import DiscordUtils
 import random
 import os
 import setupinfo as setup
 import invitedata as invitedb
+import asyncio
 
-token, channel_id, server_id, rules_id, owner_id = setup.set_info()
+token, channel_id, server_id, rules_id, owner_id, reaction_message = setup.set_info()
+new_member_role = 'New Member'
 tacobell_logo = 'https://i.imgur.com/YKDxqOp.png'
 
 intents = discord.Intents.default()
 intents.members = True
 intents.message_content = True
+intents.reactions = True
 client = commands.Bot(
     command_prefix='!',
     case_insens=True,
@@ -23,7 +27,38 @@ client = commands.Bot(
 
 tracker = DiscordUtils.InviteTracker(client)
 
-client.version = '0.0.4'
+client.version = '0.0.5'
+
+
+@client.event
+async def on_raw_reaction_add(ctx):
+    guild_id = ctx.guild_id
+    guild = discord.utils.find(lambda g: g.id == guild_id, client.guilds)
+    role = discord.utils.get(guild.roles, name=new_member_role)
+    channel = client.get_channel(ctx.channel_id)
+    message = await channel.fetch_message(ctx.message_id)
+    user = client.get_user(ctx.user_id)
+    user_emoji = ctx.emoji
+
+    if user_emoji.name == '✅':
+        if role is not None:
+            member = discord.utils.find(
+                lambda m: m.id == ctx.user_id, guild.members)
+            if member is not None:
+                try:
+                    await member.add_roles(role)
+                    await message.remove_reaction('✅', user)
+                except:
+                    print('Error adding role to user')
+                    return
+    else:
+        try:
+            member = discord.utils.find(
+                lambda m: m.id == ctx.user_id, guild.members)
+            await message.remove_reaction(user_emoji, user)
+        except:
+            print('Error removing unknown emoji')
+            return
 
 
 @client.event
@@ -58,12 +93,14 @@ async def on_member_join(new_member):
     # When a member joins, save inviter, member, and time into db
     inviter = await tracker.fetch_inviter(new_member)
     invitedb.add_invite(f'{inviter}', f'{new_member}')
+    return
 
 
 @client.event
 async def on_member_remove(member):
     # When a member leaves, remove invite information from db
     invitedb.remove_invite(member)
+    return
 
 
 @client.event
@@ -100,8 +137,6 @@ async def stats(ctx):
                     value=dpyVersion, inline=False)
     embed.add_field(name='Total Servers: ', value=serverCount, inline=True)
     embed.add_field(name='Total Users: ', value=memberCount, inline=True)
-
-    embed.set_footer(text=f'Created by | fauX')
 
     await ctx.send(embed=embed)
 
