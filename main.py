@@ -12,7 +12,7 @@ import asyncio
 
 token, channel_id, server_id, rules_id, owner_id, reaction_message = setup.set_info()
 new_member_role = 'New Member'
-tacobell_logo = 'https://i.imgur.com/YKDxqOp.png'
+bot_logo = 'https://i.imgur.com/YKDxqOp.png'
 
 intents = discord.Intents.default()
 intents.members = True
@@ -29,88 +29,18 @@ tracker = DiscordUtils.InviteTracker(client)
 
 client.version = '0.0.5'
 
-
-@client.event
-async def on_raw_reaction_add(ctx):
-    guild_id = ctx.guild_id
-    guild = discord.utils.find(lambda g: g.id == guild_id, client.guilds)
-    role = discord.utils.get(guild.roles, name=new_member_role)
-    channel = client.get_channel(ctx.channel_id)
-    message = await channel.fetch_message(ctx.message_id)
-    user = client.get_user(ctx.user_id)
-    user_emoji = ctx.emoji
-
-    if user_emoji.name == '✅':
-        if role is not None:
-            member = discord.utils.find(
-                lambda m: m.id == ctx.user_id, guild.members)
-            if member is not None:
-                try:
-                    await member.add_roles(role)
-                    await message.remove_reaction('✅', user)
-                except:
-                    print('Error adding role to user')
-                    return
-    else:
-        try:
-            member = discord.utils.find(
-                lambda m: m.id == ctx.user_id, guild.members)
-            await message.remove_reaction(user_emoji, user)
-        except:
-            print('Error removing unknown emoji')
-            return
+extensions = {
+    'cogs.OnEvent'
+}
 
 
-@client.event
-async def on_ready():
-    await client.change_presence(activity=discord.Game(name=f'Use ! to interact with me.'))
+async def load():
+    for filename in os.listdir('./cogs'):
+        if filename.endswith('.py'):
+            await client.load_extension(f'cogs.{filename[:-3]}')
 
-
-@client.event
-async def on_command_error(ctx, error):
-    # Ignore these errors
-    ignored = (commands.CommandNotFound, commands.UserInputError)
-    if isinstance(error, ignored):
-        return
-
-    if isinstance(error, commands.CommandOnCooldown):
-        m, s = divmod(error.retry_after, 60)
-        h, m = divmod(m, 60)
-
-        if int(h) == 0 and int(m) == 0:
-            await ctx.send(f'You must wait {int(s)} seconds to use this command!')
-        elif int(h) == 0 and int(m) != 0:
-            await ctx.send(f'You must wait {int(n)} minutes and {int(s)} seconds to use this command!')
-        else:
-            await ctx.send(f'You must wait {int(h)} hours, {int(m)} minutes, and {int(s)} seconds to use this command!')
-    elif isinstance(error, commands.CheckFailure):
-        await ctx.send(f'Sorry @{ctx.author.mention}, you lack the permission to use this command.')
-    raise error
-
-
-@client.event
-async def on_member_join(new_member):
-    # When a member joins, save inviter, member, and time into db
-    inviter = await tracker.fetch_inviter(new_member)
-    invitedb.add_invite(f'{inviter}', f'{new_member}')
-    return
-
-
-@client.event
-async def on_member_remove(member):
-    # When a member leaves, remove invite information from db
-    invitedb.remove_invite(member)
-    return
-
-
-@client.event
-async def on_message(message):
-    # On Message Events
-    # Ignore bot messages
-    if message.author.id == client.user.id:
-        return
-
-    await client.process_commands(message)
+if __name__ == '__main__':
+    load()
 
 
 @client.command()
@@ -122,12 +52,16 @@ async def stats(ctx):
     memberCount = len(set(client.get_all_members())
                       )  # set removes duplicates
 
+    button = Button(label='View my Code',
+                    url='https://github.com/jbittle27/SausBot')
+    view = View()
+    view.add_item(button)
     embed = discord.Embed(title=f'Bot Statistics',
                           description='\uFEFF',
-                          url='https://github.com/jbittle27/SausBot',
+                          url=None,
                           colour=discord.Colour(0xd9a064))
 
-    embed.set_thumbnail(url=tacobell_logo)
+    embed.set_thumbnail(url=bot_logo)
 
     embed.add_field(name='Bot Version: ',
                     value=client.version, inline=False)
@@ -135,10 +69,10 @@ async def stats(ctx):
                     value=pythonVersion, inline=False)
     embed.add_field(name='Discord.Py Version: ',
                     value=dpyVersion, inline=False)
-    embed.add_field(name='Total Servers: ', value=serverCount, inline=True)
-    embed.add_field(name='Total Users: ', value=memberCount, inline=True)
+    #embed.add_field(name='Total Servers: ', value=serverCount, inline=True)
+    #embed.add_field(name='Total Users: ', value=memberCount, inline=True)
 
-    await ctx.send(embed=embed)
+    await ctx.send(embed=embed, view=view)
 
 
 @client.command(aliases=['close', 'exit', 'stop'])
@@ -160,7 +94,7 @@ async def whois(ctx, arg):
         time = invite_object[2]
         embed = discord.Embed(title=f'{invitee} was invited by {inviter}',
                               description='', colour=discord.Colour(0xd9a064))
-        embed.set_thumbnail(url=tacobell_logo)
+        embed.set_thumbnail(url=bot_logo)
         embed.add_field(
             name=f'Joined {time}', value='\uFEFF', inline=True)
         await ctx.send(embed=embed)
