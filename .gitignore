@@ -1,5 +1,3 @@
-
-*.txt
-*.db
-setupinfo.json
-tacobell.png
+*.pyc
+*.json
+/Testing
